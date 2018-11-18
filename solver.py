@@ -2,6 +2,8 @@ import sys
 from PIL import Image
 from Graph import Graph
 import math
+from queue import PriorityQueue
+import time
 
 
 # try's to open the image if IOException is raised prints an error
@@ -117,28 +119,104 @@ def traverse(img, graph, node, direction):
             break
 
 
-def test(img, nodes):
+def a_star(graph):
+    queue = PriorityQueue()
+    goal = graph.get_nodes()[0][0]
+    start = graph.get_nodes()[1][0]
+
+    queue.put(start, 0)
+
+    came_from = {}
+    cost_so_far = {}
+
+    came_from[start] = None
+    cost_so_far[start] = 0
+
+    while not queue.empty():
+        current = queue.get()
+
+        if current == goal:
+            break
+
+        for neighbour in graph.get_neighbours(current):
+            new_cost = cost_so_far[current] + neighbour[1]
+            if neighbour[0] not in cost_so_far or new_cost < cost_so_far[neighbour[0]]:
+                cost_so_far[neighbour[0]] = new_cost
+                priority = new_cost + graph.get_value(neighbour[0])
+                queue.put(neighbour[0], priority)
+                came_from[neighbour[0]] = current
+
+    return reconstruct_path(came_from, start, goal)
+
+
+def reconstruct_path(came_from, start, goal):
+    current = goal
+    path = []
+    while current != start:
+        path.append(current)
+        current = came_from[current]
+    path.append(start)
+    path.reverse()
+
+    full_path = []
+    full_path.append(start)
+    for i in range(len(path) - 1):
+        if path[i][0] > path[i + 1][0]:
+            # x is to right
+            for x in range(path[i + 1][0] + 1, path[i][0]):
+                full_path.append((x, path[i][1]))
+        elif path[i][0] < path[i + 1][0]:
+            # x is to the left
+            for x in range(path[i][0] + 1, path[i + 1][0]):
+                full_path.append((x, path[i][1]))
+        elif path[i][1] > path[i + 1][1]:
+            # y is below
+            for y in range(path[i + 1][1] + 1, path[i][1]):
+                full_path.append((path[i][0], y))
+        elif path[i][1] < path[i + 1][1]:
+            # y is above
+            for y in range(path[i][1] + 1, path[i + 1][1]):
+                full_path.append((path[i][0], y))
+        full_path.append(path[i + 1])
+    full_path.append(goal)
+
+    return full_path
+
+
+def output(img, path):
     red = (255, 0, 0)
     img = img.convert('RGB')
     px = img.load()
 
-    for node in nodes:
-        x, y = node
+    for x, y in path:
         px[x, y] = red
 
-    img.save("test.png")
+    img.save("solved.png")
 
 
 def main(imgPath):
     img = open_image(imgPath)
     graph = Graph()
 
+    print("Collecting Nodes...")
+    t0 = time.time()
     get_nodes(img, graph)
+    print("Collected Nodes in {0:.2f}".format(time.time() - t0) + " seconds")
+
+    print("Collecting Edges...")
+    t0 = time.time()
     get_neighbours(img, graph)
+    print("Collected Edges in {0:.2f}".format(time.time() - t0) + " seconds")
 
-    # test(img, graph.get_nodes_names())
+    print("Solving Maze...")
+    t0 = time.time()
+    path = a_star(graph)
+    print("Solved maze in {0:.2f}".format(time.time() - t0) + " seconds")
 
-    graph.print_nodes()
+    print("Saving Image...")
+    t0 = time.time()
+    output(img, path)
+    print("Saved Image in {0:.2f}".format(time.time() - t0) + " seconds")
 
 
 if __name__ == "__main__":

@@ -17,7 +17,7 @@ class Graph:
             x, y = node.get_name()
             value = node.get_value()
             neighbours = node.get_neighbours()
-            nodes.append((x, y, value, neighbours))
+            nodes.append(((x, y), value, neighbours))
 
         return nodes
 
@@ -30,7 +30,7 @@ class Graph:
             x, y = node.get_name()
             value = node.get_value()
             neighbours = node.get_neighbours()
-            nodes.append((x, y, value, neighbours))
+            nodes.append(((x, y), value, neighbours))
 
         print(nodes)
 
@@ -43,8 +43,13 @@ class Graph:
             if node.get_name() == name:
                 node.add_neighbour(neighbour, distance)
 
+    def get_neighbours(self, node):
+        for i in self.nodes:
+            if i.get_name() == node:
+                return i.get_neighbours()
 
-
-
-
+    def get_value(self, node):
+        for i in self.nodes:
+            if i.get_name() == node:
+                return i.get_value()
 
